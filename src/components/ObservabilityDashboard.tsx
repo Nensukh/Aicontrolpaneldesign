@@ -1,11 +1,13 @@
-import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Search, Filter, Calendar, ArrowLeft, X } from 'lucide-react';
 import { traceData } from '../data/traces';
+import { allTracesData } from '../data/allTraces';
 import { GraphView } from './GraphView';
 import { BusinessView } from './BusinessView';
 import { SpanTreeNode, ProcessedSpan } from './observability/SpanTreeNode';
 import { SpanDetails } from './observability/SpanDetails';
 import { TraceView } from './observability/TraceView';
+import { TracesTable } from './observability/TracesTable';
 
 interface ObservabilityDashboardProps {
   selectedAgent: string | null;
@@ -15,6 +17,7 @@ interface ObservabilityDashboardProps {
 type SpanStatus = 'STATUS_CODE_OK' | 'STATUS_CODE_ERROR' | 'STATUS_CODE_UNSET';
 type TabType = 'info' | 'attributes';
 type MainTabType = 'execution' | 'graph' | 'business' | 'trace';
+type ViewMode = 'list' | 'detail';
 
 // OpenTelemetry Attribute structure
 interface OTelAttribute {
@@ -103,11 +106,15 @@ function parseOTelTrace(otelData: typeof traceData): ProcessedSpan[] {
 }
 
 export function ObservabilityDashboard({ selectedAgent, theme = 'dark' }: ObservabilityDashboardProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'error'>('all');
+  const [timeFilter, setTimeFilter] = useState<'all' | '1h' | '6h' | '24h'>('all');
   const [activeTab, setActiveTab] = useState<TabType>('info');
   const [mainTab, setMainTab] = useState<MainTabType>('execution');
 
-  // Parse the trace data
+  // Parse the trace data (for detail view)
   const processedSpans = parseOTelTrace(traceData);
   const rootSpan = processedSpans[0];
   
@@ -124,7 +131,80 @@ export function ObservabilityDashboard({ selectedAgent, theme = 'dark' }: Observ
   const [selectedSpanId, setSelectedSpanId] = useState<string | null>(rootSpan?.spanId || null);
   const selectedSpan = allSpans.find(s => s.spanId === selectedSpanId);
 
-  // Extract trace metadata
+  // Generate trace summaries for table
+  const tracesSummaries = useMemo(() => {
+    return allTracesData.map(trace => {
+      // For demo, generate random but consistent data based on trace ID
+      const hash = trace.traceId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const spanCount = 8 + (hash % 15);
+      const duration = 15000 + (hash % 10000);
+      const totalTokens = 1000 + (hash % 2000);
+
+      return {
+        traceId: trace.traceId,
+        sessionId: trace.sessionId,
+        timestamp: trace.timestamp,
+        duration,
+        status: trace.status as SpanStatus,
+        spanCount,
+        userRequest: trace.userRequest,
+        agentName: trace.agentName,
+        totalTokens
+      };
+    });
+  }, []);
+
+  // Filter traces based on search and filters
+  const filteredTraces = useMemo(() => {
+    let filtered = tracesSummaries;
+
+    // Search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(trace =>
+        trace.traceId.toLowerCase().includes(search) ||
+        trace.sessionId.toLowerCase().includes(search) ||
+        trace.userRequest.toLowerCase().includes(search) ||
+        trace.agentName.toLowerCase().includes(search)
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(trace => {
+        if (statusFilter === 'success') return trace.status === 'STATUS_CODE_OK';
+        if (statusFilter === 'error') return trace.status === 'STATUS_CODE_ERROR';
+        return true;
+      });
+    }
+
+    // Time filter
+    if (timeFilter !== 'all') {
+      const now = Date.now();
+      const timeMap = {
+        '1h': 60 * 60 * 1000,
+        '6h': 6 * 60 * 60 * 1000,
+        '24h': 24 * 60 * 60 * 1000
+      };
+      const timeWindow = timeMap[timeFilter];
+      filtered = filtered.filter(trace => (now - trace.timestamp) <= timeWindow);
+    }
+
+    return filtered;
+  }, [tracesSummaries, searchTerm, statusFilter, timeFilter]);
+
+  const handleSelectTrace = (traceId: string) => {
+    setSelectedTraceId(traceId);
+    setViewMode('detail');
+    setMainTab('execution');
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedTraceId(null);
+  };
+
+  // Extract trace metadata (for detail view)
   const traceId = rootSpan?.traceId || '';
   const sessionId = rootSpan?.attributes['session.id'] || '';
   const userRequest = rootSpan?.attributes['user.request'] || '';
@@ -141,44 +221,233 @@ export function ObservabilityDashboard({ selectedAgent, theme = 'dark' }: Observ
     return sum + (span.attributes['llm.usage.total_tokens'] || 0);
   }, 0);
 
+  // LIST VIEW
+  if (viewMode === 'list') {
+    return (
+      <div className={`min-h-screen p-6 ${
+        theme === 'dark' ? 'bg-black' : 'bg-gray-50'
+      }`}>
+        <div className="max-w-[1800px] mx-auto">
+          {/* Header */}
+          <div className="mb-4">
+            <h2 className={`text-3xl font-bold mb-1 ${
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            }`}>
+              Trace Observability
+            </h2>
+            <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
+              Monitor and analyze OpenTelemetry traces from multi-agent workflows
+            </p>
+          </div>
+
+          {/* Filters Bar */}
+          <div className={`rounded-lg p-4 mb-4 space-y-3 ${
+            theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+          }`}>
+            {/* Search */}
+            <div className="relative">
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${
+                theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+              }`} />
+              <input
+                type="text"
+                placeholder="Search by Trace ID, Session ID, Request, Agent..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`w-full pl-10 pr-4 py-2.5 rounded-lg transition-colors ${
+                  theme === 'dark'
+                    ? 'bg-black text-gray-200 placeholder-gray-500 border border-gray-800'
+                    : 'bg-gray-50 text-gray-900 placeholder-gray-400 border border-gray-200'
+                } outline-none focus:ring-2 focus:ring-cyan-500`}
+              />
+            </div>
+
+            {/* Filter Buttons */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Filter className={`w-4 h-4 ${
+                  theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
+                }`} />
+                <span className={`text-sm font-medium ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  Filters:
+                </span>
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex gap-2">
+                {['all', 'success', 'error'].map(status => (
+                  <button
+                    key={status}
+                    onClick={() => setStatusFilter(status as typeof statusFilter)}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                      statusFilter === status
+                        ? theme === 'dark'
+                          ? 'bg-cyan-600 text-white'
+                          : 'bg-cyan-500 text-white'
+                        : theme === 'dark'
+                        ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {status === 'all' ? 'All Status' : status === 'success' ? 'Success' : 'Error'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Time Filter */}
+              <div className="flex items-center gap-2 ml-4">
+                <Calendar className={`w-4 h-4 ${
+                  theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
+                }`} />
+                <div className="flex gap-2">
+                  {['all', '1h', '6h', '24h'].map(time => (
+                    <button
+                      key={time}
+                      onClick={() => setTimeFilter(time as typeof timeFilter)}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                        timeFilter === time
+                          ? theme === 'dark'
+                            ? 'bg-cyan-600 text-white'
+                            : 'bg-cyan-500 text-white'
+                          : theme === 'dark'
+                          ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {time === 'all' ? 'All Time' : `Last ${time.toUpperCase()}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Clear Filters */}
+              {(searchTerm || statusFilter !== 'all' || timeFilter !== 'all') && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStatusFilter('all');
+                    setTimeFilter('all');
+                  }}
+                  className={`ml-auto px-3 py-1 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors ${
+                    theme === 'dark'
+                      ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <X className="w-3 h-3" />
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Stats Summary */}
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className={`p-3 rounded-lg ${
+              theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+            }`}>
+              <div className={`text-xs mb-1 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Total Traces
+              </div>
+              <div className={`text-2xl font-bold ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>
+                {filteredTraces.length}
+              </div>
+            </div>
+            
+            <div className={`p-3 rounded-lg ${
+              theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+            }`}>
+              <div className={`text-xs mb-1 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Success Rate
+              </div>
+              <div className={`text-2xl font-bold ${
+                theme === 'dark' ? 'text-green-400' : 'text-green-600'
+              }`}>
+                {filteredTraces.length > 0
+                  ? Math.round((filteredTraces.filter(t => t.status === 'STATUS_CODE_OK').length / filteredTraces.length) * 100)
+                  : 0}%
+              </div>
+            </div>
+            
+            <div className={`p-3 rounded-lg ${
+              theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+            }`}>
+              <div className={`text-xs mb-1 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Avg Duration
+              </div>
+              <div className={`text-2xl font-bold ${
+                theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'
+              }`}>
+                {filteredTraces.length > 0
+                  ? formatDuration(filteredTraces.reduce((sum, t) => sum + t.duration, 0) / filteredTraces.length)
+                  : '0ms'}
+              </div>
+            </div>
+            
+            <div className={`p-3 rounded-lg ${
+              theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+            }`}>
+              <div className={`text-xs mb-1 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Total Spans
+              </div>
+              <div className={`text-2xl font-bold ${
+                theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+              }`}>
+                {filteredTraces.reduce((sum, t) => sum + t.spanCount, 0)}
+              </div>
+            </div>
+          </div>
+
+          {/* Traces Table */}
+          <TracesTable 
+            traces={filteredTraces} 
+            onSelectTrace={handleSelectTrace}
+            theme={theme}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // DETAIL VIEW
   return (
     <div className={`min-h-screen p-6 ${
       theme === 'dark' ? 'bg-black' : 'bg-gray-50'
     }`}>
       <div className="max-w-[1800px] mx-auto">
-        {/* Header */}
-        <div className="mb-4">
-          <h2 className={`text-3xl font-bold mb-1 ${
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>
-            Trace Observability
-          </h2>
-          <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-            Monitor and analyze OpenTelemetry traces from multi-agent workflows
-          </p>
-        </div>
-
-        {/* Search Bar */}
-        <div className={`rounded-lg p-3 mb-4 ${
-          theme === 'dark' 
-            ? 'bg-gray-900' 
-            : 'bg-white'
-        }`}>
-          <div className="relative">
-            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${
-              theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
-            }`} />
-            <input
-              type="text"
-              placeholder="Search by Span ID, Trace ID, Agent Name, Attributes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2 rounded-lg transition-colors ${
-                theme === 'dark'
-                  ? 'bg-black text-gray-200 placeholder-gray-500'
-                  : 'bg-gray-50 text-gray-900 placeholder-gray-400'
-              } outline-none`}
-            />
+        {/* Header with Back Button */}
+        <div className="mb-4 flex items-center gap-4">
+          <button
+            onClick={handleBackToList}
+            className={`p-2 rounded-lg transition-colors ${
+              theme === 'dark'
+                ? 'bg-gray-900 text-gray-400 hover:bg-gray-800'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h2 className={`text-3xl font-bold mb-1 ${
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            }`}>
+              Trace Details
+            </h2>
+            <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
+              Detailed view of trace execution and performance
+            </p>
           </div>
         </div>
 

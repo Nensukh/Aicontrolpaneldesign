@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Search, ChevronRight, Network, Settings, Shield, Clock, Database, Plus, Target, Play, Sliders, GripVertical, X } from 'lucide-react';
+import { Search, ChevronRight, Network, Settings, Shield, Clock, Database, Plus, Target, Play, Sliders, GripVertical, X, BookOpen, Link as LinkIcon, FileText, MessageSquare, Wrench } from 'lucide-react';
 import { AgentRegistry } from './AgentRegistry';
-import { GroundTruthCapture } from './GroundTruthCapture';
-import { EvaluationDashboard } from './EvaluationDashboard';
-import { BenchmarkSetting } from './BenchmarkSetting';
+import { AgentMetricsTab } from './AgentMetricsTab';
+import { AgentKnowledgeTab } from './AgentKnowledgeTab';
+import { AgentToolsTab } from './AgentToolsTab';
 
 interface Agent {
   id: string;
@@ -15,6 +15,17 @@ interface Agent {
   parentId?: string;
   children?: string[];
   lastUpdated: string;
+}
+
+interface KnowledgeSource {
+  id: string;
+  type: 'link' | 'document' | 'text' | 'graph';
+  title: string;
+  content: string;
+  description?: string;
+  addedDate: Date;
+  processName: string;
+  domainName: string;
 }
 
 const mockAgents: Agent[] = [
@@ -82,7 +93,7 @@ interface AgentInventoryProps {
   theme: 'dark' | 'light';
 }
 
-type AgentView = 'details' | 'groundtruth' | 'evaluation' | 'metrics';
+type AgentView = 'details' | 'tools' | 'knowledge' | 'metrics';
 
 export function AgentInventory({ onSelectAgent, theme }: AgentInventoryProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -511,9 +522,9 @@ export function AgentInventory({ onSelectAgent, theme }: AgentInventoryProps) {
                     Details
                   </button>
                   <button
-                    onClick={() => setAgentView('groundtruth')}
+                    onClick={() => setAgentView('tools')}
                     className={`px-4 py-2 rounded-t-lg transition-colors flex items-center gap-2 ${
-                      agentView === 'groundtruth'
+                      agentView === 'tools'
                         ? theme === 'dark'
                           ? 'bg-gray-900 text-cyan-400 border-t border-l border-r border-gray-800'
                           : 'bg-gray-50 text-cyan-600 border-t border-l border-r border-gray-200'
@@ -522,13 +533,13 @@ export function AgentInventory({ onSelectAgent, theme }: AgentInventoryProps) {
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    <Target className="w-4 h-4" />
-                    Ground Truth
+                    <Wrench className="w-4 h-4" />
+                    Tools
                   </button>
                   <button
-                    onClick={() => setAgentView('evaluation')}
+                    onClick={() => setAgentView('knowledge')}
                     className={`px-4 py-2 rounded-t-lg transition-colors flex items-center gap-2 ${
-                      agentView === 'evaluation'
+                      agentView === 'knowledge'
                         ? theme === 'dark'
                           ? 'bg-gray-900 text-cyan-400 border-t border-l border-r border-gray-800'
                           : 'bg-gray-50 text-cyan-600 border-t border-l border-r border-gray-200'
@@ -537,8 +548,8 @@ export function AgentInventory({ onSelectAgent, theme }: AgentInventoryProps) {
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    <Play className="w-4 h-4" />
-                    Evaluation
+                    <BookOpen className="w-4 h-4" />
+                    Knowledge
                   </button>
                   <button
                     onClick={() => setAgentView('metrics')}
@@ -657,96 +668,6 @@ export function AgentInventory({ onSelectAgent, theme }: AgentInventoryProps) {
                       </div>
                     </div>
 
-                    {/* Tools Configuration */}
-                    <div className={`rounded-lg p-5 ${
-                      theme === 'dark' 
-                        ? 'bg-gray-900' 
-                        : 'bg-gray-50'
-                    }`}>
-                      <h3 className="font-semibold text-lg mb-3">Tools & Capabilities</h3>
-                      <div className="space-y-2">
-                        {['Knowledge Base Search', 'Ticket Management', 'Email Integration', 'Analytics Reporting'].map(
-                          (tool, idx) => (
-                            <div
-                              key={idx}
-                              className={`flex items-center justify-between p-3 rounded ${
-                                theme === 'dark'
-                                  ? 'bg-black'
-                                  : 'bg-white'
-                              }`}
-                            >
-                              <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
-                                {tool}
-                              </span>
-                              <span className={`px-2 py-1 text-xs rounded ${
-                                theme === 'dark'
-                                  ? 'bg-green-900/50 text-green-400'
-                                  : 'bg-green-100 text-green-700'
-                              }`}>
-                                Enabled
-                              </span>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Governance */}
-                    <div className={`rounded-lg p-5 ${
-                      theme === 'dark' 
-                        ? 'bg-gray-900' 
-                        : 'bg-gray-50'
-                    }`}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Shield className={`w-5 h-5 ${
-                          theme === 'dark' ? 'text-cyan-500' : 'text-cyan-600'
-                        }`} />
-                        <h3 className="font-semibold text-lg">Governance & Compliance</h3>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className={`text-sm mb-1 ${
-                            theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
-                          }`}>
-                            Data Retention
-                          </div>
-                          <div className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
-                            90 days
-                          </div>
-                        </div>
-                        <div>
-                          <div className={`text-sm mb-1 ${
-                            theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
-                          }`}>
-                            Compliance Level
-                          </div>
-                          <div className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
-                            SOC 2, GDPR
-                          </div>
-                        </div>
-                        <div>
-                          <div className={`text-sm mb-1 ${
-                            theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
-                          }`}>
-                            Access Level
-                          </div>
-                          <div className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
-                            Restricted
-                          </div>
-                        </div>
-                        <div>
-                          <div className={`text-sm mb-1 ${
-                            theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
-                          }`}>
-                            Audit Logging
-                          </div>
-                          <div className={theme === 'dark' ? 'text-green-400' : 'text-green-600'}>
-                            Enabled
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Agent Topology */}
                     {(selectedAgent.children || selectedAgent.parentId) && (
                       <div className={`rounded-lg p-5 ${
@@ -854,16 +775,16 @@ export function AgentInventory({ onSelectAgent, theme }: AgentInventoryProps) {
                 </div>
               )}
 
-              {agentView === 'groundtruth' && (
-                <GroundTruthCapture selectedAgent={selectedAgentId} agentName={selectedAgent.name} theme={theme} />
+              {agentView === 'tools' && (
+                <AgentToolsTab agentId={selectedAgentId} agentName={selectedAgent.name} theme={theme} />
               )}
 
-              {agentView === 'evaluation' && (
-                <EvaluationDashboard selectedAgent={selectedAgentId} agentName={selectedAgent.name} theme={theme} />
+              {agentView === 'knowledge' && (
+                <AgentKnowledgeTab agentId={selectedAgentId} agentName={selectedAgent.name} theme={theme} />
               )}
 
               {agentView === 'metrics' && (
-                <BenchmarkSetting selectedAgent={selectedAgentId} agentName={selectedAgent.name} theme={theme} />
+                <AgentMetricsTab agentId={selectedAgentId} agentName={selectedAgent.name} theme={theme} />
               )}
             </div>
           </div>
