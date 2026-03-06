@@ -874,6 +874,10 @@
     height: 85vh;
   }
 
+  .h-\[calc\(90vh-200px\)\] {
+    height: calc(90vh - 200px);
+  }
+
   .h-full {
     height: 100%;
   }
@@ -1081,6 +1085,10 @@
 
   .cursor-col-resize {
     cursor: col-resize;
+  }
+
+  .cursor-default {
+    cursor: default;
   }
 
   .cursor-not-allowed {
@@ -2450,6 +2458,10 @@
 
   .pb-0 {
     padding-bottom: calc(var(--spacing) * 0);
+  }
+
+  .pb-2 {
+    padding-bottom: calc(var(--spacing) * 2);
   }
 
   .pb-4 {

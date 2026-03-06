@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Moon, Sun, Menu, X, Users, Target, TrendingUp, Activity, ClipboardList, Bot, Eye, ChevronLeft, ChevronRight, ChevronDown, LayoutDashboard, BarChart3, BookOpen, FlaskConical, Wrench } from 'lucide-react';
+import { Moon, Sun, Menu, X, Users, Target, TrendingUp, Activity, ClipboardList, Bot, Eye, ChevronLeft, ChevronRight, ChevronDown, LayoutDashboard, BarChart3, BookOpen, FlaskConical, Wrench, Code } from 'lucide-react';
 import { AgentInventory } from './components/AgentInventory';
 import { GroundTruthCapture } from './components/GroundTruthCapture';
 import { BenchmarkSetting } from './components/BenchmarkSetting';
@@ -10,6 +10,7 @@ import { Worklist } from './components/Worklist';
 import { Dashboard } from './components/Dashboard';
 import { AgentPerformance } from './components/AgentPerformance';
 import { KnowledgeBase } from './components/KnowledgeBase';
+import { Skills } from './components/Skills';
 import { AgentEvaluationExperiments } from './components/AgentEvaluationExperiments';
 import { ToolCatalogue } from './components/ToolCatalogue';
 
@@ -22,6 +23,7 @@ type View =
   | 'observability'
   | 'performance'
   | 'knowledge'
+  | 'skills'
   | 'tools';
 
 export default function App() {
@@ -84,8 +86,9 @@ export default function App() {
     { id: 'monitoring' as View, label: 'Agent Evaluation (Live)', icon: Activity, group: 'monitoring' },
     { id: 'observability' as View, label: 'Observability', icon: Eye, group: 'monitoring' },
     { id: 'performance' as View, label: 'Agent Performance', icon: BarChart3, group: 'monitoring' },
-    { id: 'knowledge' as View, label: 'Knowledge Base', icon: BookOpen, group: 'resources' },
-    { id: 'tools' as View, label: 'Tools Catalogue', icon: Wrench, group: 'resources' },
+    { id: 'knowledge' as View, label: 'Knowledge', icon: BookOpen, group: 'resources' },
+    { id: 'skills' as View, label: 'Skills', icon: Code, group: 'resources' },
+    { id: 'tools' as View, label: 'Tools', icon: Wrench, group: 'resources' },
   ];
 
   // Group navigation items
@@ -267,6 +270,9 @@ export default function App() {
         )}
         {currentView === 'experiments' && (
           <AgentEvaluationExperiments theme={theme} />
+        )}
+        {currentView === 'skills' && (
+          <Skills theme={theme} />
         )}
         {currentView === 'tools' && (
           <ToolCatalogue theme={theme} />

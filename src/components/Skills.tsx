@@ -1,30 +1,25 @@
 import { useState } from 'react';
 import { 
   Plus, 
-  FileText, 
-  Link as LinkIcon, 
-  Upload, 
-  MessageSquare, 
-  Network,
+  Code, 
   Search,
   Folder,
   ExternalLink,
   Trash2,
   Edit2,
   BookOpen,
-  Globe,
-  Code
+  FileCode
 } from 'lucide-react';
-import { KnowledgeGraphViewer } from './knowledge/KnowledgeGraphViewer';
-import { TextInstructionsViewer } from './knowledge/TextInstructionsViewer';
 import { SkillsEditor } from './knowledge/SkillsEditor';
 
-interface KnowledgeSource {
+interface Skill {
   id: string;
-  type: 'link' | 'document' | 'text' | 'graph';
   title: string;
-  content: string; // URL, file name, or text content
+  content: string;
   description?: string;
+  version: string;
+  complexity: 'Beginner' | 'Intermediate' | 'Advanced';
+  category: string;
   addedDate: Date;
 }
 
@@ -32,7 +27,7 @@ interface Process {
   id: string;
   name: string;
   description: string;
-  sources: KnowledgeSource[];
+  skills: Skill[];
 }
 
 interface Domain {
@@ -42,73 +37,329 @@ interface Domain {
   processes: Process[];
 }
 
-interface KnowledgeBaseProps {
+interface SkillsProps {
   theme: 'dark' | 'light';
 }
 
-// Mock initial data
+// Mock initial data with skills moved from Knowledge Base
 const initialDomains: Domain[] = [
   {
     id: 'securities',
     name: 'Securities Settlements',
-    description: 'Knowledge base for securities settlement operations',
+    description: 'Skills for securities settlement operations',
     processes: [
       {
         id: 'dvp-settlement',
         name: 'DVP Settlement Process',
         description: 'Delivery versus Payment settlement workflows',
-        sources: [
-          {
-            id: '1',
-            type: 'link',
-            title: 'DTCC Settlement Guidelines',
-            content: 'https://dtcc.com/settlement-guidelines',
-            description: 'Official DTCC documentation for DVP settlement',
-            addedDate: new Date('2024-01-15')
-          },
-          {
-            id: '2',
-            type: 'document',
-            title: 'Internal Settlement SOP',
-            content: 'settlement_procedures_v2.pdf',
-            description: 'Internal standard operating procedures',
-            addedDate: new Date('2024-01-20')
-          }
-        ]
+        skills: []
       },
       {
         id: 'fails-management',
         name: 'Fails Management',
         description: 'Managing settlement failures and exceptions',
-        sources: []
+        skills: []
       }
     ]
   },
   {
     id: 'corporate-actions',
     name: 'Corporate Actions',
-    description: 'Knowledge base for corporate action processing',
+    description: 'Skills for corporate action processing',
     processes: [
       {
         id: 'dividend-processing',
         name: 'Dividend Processing',
         description: 'Cash and stock dividend workflows',
-        sources: [
+        skills: [
           {
-            id: '3',
-            type: 'text',
-            title: 'Dividend Processing Steps',
-            content: '1. Receive announcement from issuer\\n2. Validate corporate action details\\n3. Calculate entitlements\\n4. Process payments\\n5. Reconcile accounts',
-            description: 'Step-by-step dividend processing guide',
-            addedDate: new Date('2024-02-01')
+            id: '5',
+            title: 'Dividend Announcement Processing',
+            content: `# Dividend Announcement Processing
+
+## Skill Information
+- **Skill Name**: dividend_announcement_processing
+- **Version**: 1.0.0
+- **Category**: Corporate Actions
+- **Complexity**: Intermediate
+
+## Description
+This skill enables AI agents to process dividend announcements from issuers, validate the information, and prepare entitlement calculations for shareholders.
+
+## Prerequisites
+- Access to issuer announcement systems
+- Understanding of dividend types (cash, stock, special)
+- Knowledge of record date, ex-date, and payment date concepts
+- Familiarity with CUSIP/ISIN identifiers
+
+## Inputs
+- Issuer announcement document (PDF, XML, or structured data)
+- Security identifier (CUSIP/ISIN)
+- Announcement date
+- Dividend type
+
+## Outputs
+- Validated dividend details
+- Record date, ex-date, payment date
+- Dividend rate per share
+- Entitlement calculation ready for processing
+
+## Step-by-Step Instructions
+
+### 1. Receive and Parse Announcement
+Extract key information from the issuer's dividend announcement:
+- Company name and security identifier
+- Dividend type (cash, stock, special)
+- Dividend amount or rate
+- Currency (for cash dividends)
+- Important dates (declaration, record, ex, payment)
+
+### 2. Validate Announcement Data
+Verify the completeness and accuracy of the announcement:
+- Confirm security identifier matches issuer
+- Validate dividend rate is reasonable (compare to historical)
+- Ensure all required dates are present and logical
+- Check currency code is valid (ISO 4217)
+
+### 3. Calculate Ex-Date
+If ex-date is not provided, calculate using T+2 settlement:
+- Ex-date = Record date - 2 business days
+- Account for market holidays
+- Verify against market calendar
+
+### 4. Determine Shareholder Eligibility
+Identify shareholders eligible for the dividend:
+- Shareholders holding positions as of record date
+- Exclude shares acquired on or after ex-date
+- Consider beneficial vs registered ownership
+
+### 5. Calculate Entitlements
+Compute dividend entitlements per shareholder:
+- Cash dividend: Shares owned × dividend per share
+- Stock dividend: Shares owned × stock dividend ratio
+- Apply tax withholding rules if applicable
+
+### 6. Generate Entitlement File
+Create output file for downstream processing:
+- Shareholder ID
+- Security identifier
+- Number of shares
+- Dividend amount
+- Payment currency
+- Tax withholding amount
+
+## Error Handling
+- **Missing data**: Flag announcement as incomplete, request clarification from issuer
+- **Invalid dates**: Alert operations team, hold processing until resolved
+- **Mismatched security**: Verify CUSIP/ISIN, contact issuer if discrepancy exists
+- **Calculation errors**: Log error, trigger manual review
+
+## Best Practices
+- Always cross-reference with previous dividend announcements for the same issuer
+- Maintain audit trail of all data transformations
+- Flag unusual dividend rates (>10% variance from historical average)
+- Coordinate with tax team for withholding requirements
+
+## Example Usage
+\`\`\`
+Input: AAPL dividend announcement
+- Security: CUSIP 037833100 (Apple Inc.)
+- Type: Cash dividend
+- Rate: $0.24 per share
+- Record Date: 2024-05-13
+- Payment Date: 2024-05-16
+
+Processing:
+1. Validate CUSIP matches Apple Inc. ✓
+2. Calculate ex-date: 2024-05-09 (2 business days before record)
+3. Identify eligible shareholders (positions as of 2024-05-13)
+4. Calculate: 1,000 shares × $0.24 = $240.00
+5. Generate entitlement record
+
+Output: Entitlement file ready for payment processing
+\`\`\`
+
+## Related Skills
+- dividend_payment_processing
+- stock_dividend_allocation
+- tax_withholding_calculation
+
+## References
+- DTCC Corporate Actions Guidelines
+- ISO 15022 Corporate Actions Standards
+- Internal SOP: CA-DIV-001`,
+            description: 'Comprehensive skill for processing dividend announcements following agentskills.io specification',
+            version: '1.0.0',
+            complexity: 'Intermediate',
+            category: 'Corporate Actions',
+            addedDate: new Date('2024-02-15')
           },
           {
-            id: '4',
-            type: 'graph',
-            title: 'Corporate Actions Knowledge Graph',
-            content: 'https://graph.company.com/api/v1/corporate-actions',
-            description: 'Graph database with corporate actions relationships',
-            addedDate: new Date('2024-02-10')
+            id: '6',
+            title: 'Merger & Acquisition Event Processing',
+            content: `# Merger & Acquisition Event Processing
+
+## Skill Information
+- **Skill Name**: merger_acquisition_processing
+- **Version**: 1.0.0
+- **Category**: Corporate Actions
+- **Complexity**: Advanced
+
+## Description
+This skill enables AI agents to process merger and acquisition corporate actions, including tender offers, cash mergers, stock-for-stock exchanges, and spin-offs. Handles complex reorganization scenarios with multiple securities.
+
+## Prerequisites
+- Understanding of M&A transaction structures
+- Knowledge of CUSIP/ISIN allocation process
+- Familiarity with exchange ratios and tender offer mechanics
+- Access to regulatory filing systems (SEC, etc.)
+
+## Inputs
+- M&A announcement or regulatory filing
+- Acquiring company identifier
+- Target company identifier
+- Transaction type (cash, stock, mixed)
+- Exchange ratio or offer price
+- Effective date
+
+## Outputs
+- Processed corporate action event
+- Security position adjustments
+- Cash and stock entitlements
+- New security allocations
+- Fractional share handling instructions
+
+## Step-by-Step Instructions
+
+### 1. Classify Transaction Type
+Determine the specific M&A structure:
+- **Cash Merger**: Target shareholders receive cash consideration
+- **Stock-for-Stock**: Exchange target shares for acquirer shares
+- **Mixed Consideration**: Combination of cash and stock
+- **Tender Offer**: Voluntary exchange with acceptance period
+- **Spin-off**: Distribution of subsidiary shares to parent shareholders
+
+### 2. Extract Transaction Terms
+Parse the announcement for key details:
+- Exchange ratio (e.g., 0.5 shares of acquirer for each target share)
+- Cash consideration per share
+- Election options (cash vs stock choice)
+- Proration rules if oversubscribed
+- Treatment of fractional shares
+
+### 3. Validate Effective Date
+Confirm the merger effective date and related timelines:
+- Announcement date
+- Shareholder vote date (if applicable)
+- Effective/closing date
+- Settlement date for new securities
+- Deadline for elections (if applicable)
+
+### 4. Process Shareholder Elections
+If shareholders have choice of consideration:
+- Capture shareholder elections (cash vs stock preference)
+- Apply proration if elections exceed available pool
+- Default non-responders to standard terms
+- Generate election summary report
+
+### 5. Calculate Entitlements
+Determine what each shareholder receives:
+- **Stock component**: Target shares × exchange ratio = New acquirer shares
+- **Cash component**: Target shares × cash per share = Cash payment
+- **Fractional shares**: Apply rounding rules or cash-in-lieu
+- **Mixed**: Apply election percentages and proration
+
+### 6. Execute Security Movements
+Process the actual position changes:
+- Debit target company shares from accounts
+- Credit new acquirer shares (if applicable)
+- Process cash payments
+- Handle fractional share payments
+- Update CUSIP/ISIN in system
+
+### 7. Reconcile Positions
+Verify all movements balance:
+- Total target shares in = Total consideration out
+- Cash payments match calculations
+- New shares issued match exchange ratio
+- No orphaned positions remain
+
+### 8. Generate Reporting
+Create comprehensive transaction report:
+- Shareholder-level detail of exchanges
+- Aggregate cash and stock movements
+- Tax reporting information (Form 1099-B data)
+- Audit trail of all calculations
+
+## Error Handling
+- **Missing exchange ratio**: Halt processing, request clarification from corporate actions team
+- **CUSIP not allocated**: Coordinate with CUSIP Service Bureau, hold until new CUSIP assigned
+- **Fractional share errors**: Flag for manual review, ensure cash-in-lieu calculated correctly
+- **Unbalanced positions**: Generate exception report, investigate discrepancy
+
+## Complex Scenarios
+
+### Scenario: Stock-for-Stock with Cash Election
+XYZ Corp acquires ABC Corp:
+- Terms: 0.75 shares of XYZ per ABC share OR $50 cash per ABC share
+- Maximum cash pool: $100 million
+- Proration: If cash elections exceed pool, prorate to available amount
+
+Processing:
+1. Collect elections from shareholders
+2. Calculate total cash elected: 2.5M shares × $50 = $125M
+3. Apply proration: ($100M / $125M) = 80% cash, 20% stock
+4. Shareholder with 100 ABC shares who elected cash receives:
+   - Cash: 100 × $50 × 80% = $4,000
+   - Stock: 100 × 0.75 × 20% = 15 XYZ shares
+
+### Scenario: Three-Way Merger with Spin-off
+More complex structure requiring careful tracking of multiple security movements.
+
+## Best Practices
+- Maintain detailed audit log of all position changes
+- Cross-reference with regulatory filings (Form S-4, prospectus)
+- Coordinate with tax team early for 1099-B reporting
+- Test calculations with small sample before bulk processing
+- Communicate timeline and impacts to client services team
+
+## Example Usage
+\`\`\`
+Input: Microsoft (MSFT) acquires LinkedIn (LNKD)
+- Transaction: All-cash tender offer
+- Offer Price: $196.00 per LNKD share
+- Effective Date: 2024-06-15
+- Target shares: 1,000 LNKD
+
+Processing:
+1. Classify: Cash merger
+2. Validate: Effective date confirmed
+3. Calculate: 1,000 shares × $196.00 = $196,000 cash
+4. Execute: 
+   - Debit 1,000 LNKD shares
+   - Credit $196,000 cash to account
+5. Reconcile: Positions balanced ✓
+6. Report: Generate tax statement for $196,000 proceeds
+
+Output: Account updated, cash deposited, tax reporting complete
+\`\`\`
+
+## Related Skills
+- tender_offer_processing
+- spin_off_distribution
+- rights_offering_processing
+- reverse_stock_split
+
+## References
+- SEC M&A Disclosure Requirements
+- DTCC Voluntary Corporate Actions Guidelines
+- ISO 15022 MT564/MT566 Message Standards
+- Internal SOP: CA-MA-001`,
+            description: 'Advanced skill for handling complex merger and acquisition corporate actions following agentskills.io specification',
+            version: '1.0.0',
+            complexity: 'Advanced',
+            category: 'Corporate Actions',
+            addedDate: new Date('2024-02-18')
           }
         ]
       }
@@ -117,77 +368,42 @@ const initialDomains: Domain[] = [
   {
     id: 'fx',
     name: 'Foreign Exchange (FX)',
-    description: 'Knowledge base for FX operations',
+    description: 'Skills for FX operations',
     processes: [
       {
         id: 'fx-settlement',
         name: 'FX Settlement',
         description: 'Foreign exchange trade settlement',
-        sources: []
+        skills: []
       }
     ]
   }
 ];
 
-export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
+export function Skills({ theme }: SkillsProps) {
   const [domains, setDomains] = useState<Domain[]>(initialDomains);
-  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(domains[0]);
-  const [selectedProcess, setSelectedProcess] = useState<Process | null>(null);
-  const [showAddSourceModal, setShowAddSourceModal] = useState(false);
+  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(domains[1]); // Default to Corporate Actions
+  const [selectedProcess, setSelectedProcess] = useState<Process | null>(domains[1].processes[0]); // Default to Dividend Processing
+  const [showAddSkillModal, setShowAddSkillModal] = useState(false);
   const [showAddProcessModal, setShowAddProcessModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewingSource, setViewingSource] = useState<KnowledgeSource | null>(null);
+  const [viewingSkill, setViewingSkill] = useState<Skill | null>(null);
 
-  const getSourceIcon = (type: string) => {
-    switch (type) {
-      case 'link':
-        return <LinkIcon className="w-4 h-4" />;
-      case 'document':
-        return <FileText className="w-4 h-4" />;
-      case 'text':
-        return <MessageSquare className="w-4 h-4" />;
-      case 'graph':
-        return <Network className="w-4 h-4" />;
-      case 'skill':
-        return <Code className="w-4 h-4" />;
-      default:
-        return <FileText className="w-4 h-4" />;
-    }
-  };
-
-  const getSourceColor = (type: string) => {
-    switch (type) {
-      case 'link':
-        return theme === 'dark' ? 'text-blue-400 bg-blue-900/30' : 'text-blue-600 bg-blue-100';
-      case 'document':
+  const getComplexityColor = (complexity: string) => {
+    switch (complexity) {
+      case 'Beginner':
         return theme === 'dark' ? 'text-green-400 bg-green-900/30' : 'text-green-600 bg-green-100';
-      case 'text':
-        return theme === 'dark' ? 'text-purple-400 bg-purple-900/30' : 'text-purple-600 bg-purple-100';
-      case 'graph':
-        return theme === 'dark' ? 'text-orange-400 bg-orange-900/30' : 'text-orange-600 bg-orange-100';
-      case 'skill':
+      case 'Intermediate':
         return theme === 'dark' ? 'text-yellow-400 bg-yellow-900/30' : 'text-yellow-600 bg-yellow-100';
+      case 'Advanced':
+        return theme === 'dark' ? 'text-red-400 bg-red-900/30' : 'text-red-600 bg-red-100';
       default:
         return theme === 'dark' ? 'text-gray-400 bg-gray-900/30' : 'text-gray-600 bg-gray-100';
     }
   };
 
-  const handleSourceClick = (source: KnowledgeSource) => {
-    if (source.type === 'graph') {
-      // Show knowledge graph viewer
-      setViewingSource(source);
-    } else if (source.type === 'text') {
-      // Show text instructions viewer
-      setViewingSource(source);
-    } else if (source.type === 'link') {
-      window.open(source.content, '_blank');
-    } else if (source.type === 'document') {
-      // In a real app, this would download or open the document
-      alert(`Opening document: ${source.content}`);
-    } else if (source.type === 'skill') {
-      // Show skills editor
-      setViewingSource(source);
-    }
+  const handleSkillClick = (skill: Skill) => {
+    setViewingSkill(skill);
   };
 
   const handleAddProcess = (processName: string, description: string) => {
@@ -197,7 +413,7 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
       id: `process-${Date.now()}`,
       name: processName,
       description,
-      sources: []
+      skills: []
     };
 
     setDomains(domains.map(domain => 
@@ -209,12 +425,12 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
     setShowAddProcessModal(false);
   };
 
-  const handleAddSource = (sourceData: Omit<KnowledgeSource, 'id' | 'addedDate'>) => {
+  const handleAddSkill = (skillData: Omit<Skill, 'id' | 'addedDate'>) => {
     if (!selectedProcess || !selectedDomain) return;
 
-    const newSource: KnowledgeSource = {
-      ...sourceData,
-      id: `source-${Date.now()}`,
+    const newSkill: Skill = {
+      ...skillData,
+      id: `skill-${Date.now()}`,
       addedDate: new Date()
     };
 
@@ -224,14 +440,38 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
             ...domain,
             processes: domain.processes.map(process =>
               process.id === selectedProcess.id
-                ? { ...process, sources: [...process.sources, newSource] }
+                ? { ...process, skills: [...process.skills, newSkill] }
                 : process
             )
           }
         : domain
     ));
 
-    setShowAddSourceModal(false);
+    setShowAddSkillModal(false);
+  };
+
+  const handleSaveSkill = (skillId: string, newContent: string) => {
+    if (!selectedProcess || !selectedDomain) return;
+
+    setDomains(domains.map(domain =>
+      domain.id === selectedDomain.id
+        ? {
+            ...domain,
+            processes: domain.processes.map(process =>
+              process.id === selectedProcess.id
+                ? {
+                    ...process,
+                    skills: process.skills.map(skill =>
+                      skill.id === skillId
+                        ? { ...skill, content: newContent }
+                        : skill
+                    )
+                  }
+                : process
+            )
+          }
+        : domain
+    ));
   };
 
   return (
@@ -244,10 +484,10 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
           <h2 className={`text-3xl font-bold mb-2 ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}>
-            Knowledge
+            Skills
           </h2>
           <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-            Curate and manage domain knowledge for AI agents
+            Curate and manage agent skills following agentskills.io specification
           </p>
         </div>
 
@@ -372,7 +612,7 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
                         <div className={`text-xs ${
                           theme === 'dark' ? 'text-gray-600' : 'text-gray-500'
                         }`}>
-                          {process.sources.length} sources
+                          {process.skills.length} skills
                         </div>
                       </div>
                     </div>
@@ -388,7 +628,7 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
             )}
           </div>
 
-          {/* Right Column - Knowledge Sources */}
+          {/* Right Column - Skills */}
           <div className={`col-span-5 rounded-lg p-4 ${
             theme === 'dark' ? 'bg-gray-900' : 'bg-white'
           }`}>
@@ -396,11 +636,11 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
               <h3 className={`font-semibold ${
                 theme === 'dark' ? 'text-white' : 'text-gray-900'
               }`}>
-                {selectedProcess ? `${selectedProcess.name} - Sources` : 'Knowledge Sources'}
+                {selectedProcess ? `${selectedProcess.name} - Skills` : 'Skills'}
               </h3>
               {selectedProcess && (
                 <button
-                  onClick={() => setShowAddSourceModal(true)}
+                  onClick={() => setShowAddSkillModal(true)}
                   className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm ${
                     theme === 'dark'
                       ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
@@ -408,27 +648,29 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
                   }`}
                 >
                   <Plus className="w-4 h-4" />
-                  Add Source
+                  Add Skill
                 </button>
               )}
             </div>
 
             {selectedProcess ? (
-              selectedProcess.sources.length > 0 ? (
+              selectedProcess.skills.length > 0 ? (
                 <div className="space-y-3">
-                  {selectedProcess.sources.map(source => (
+                  {selectedProcess.skills.map(skill => (
                     <div
-                      key={source.id}
+                      key={skill.id}
                       className={`p-4 rounded-lg border cursor-pointer transition-all ${
                         theme === 'dark'
                           ? 'border-gray-800 hover:border-gray-700 hover:bg-gray-800'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
-                      onClick={() => handleSourceClick(source)}
+                      onClick={() => handleSkillClick(skill)}
                     >
                       <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-lg ${getSourceColor(source.type)}`}>
-                          {getSourceIcon(source.type)}
+                        <div className={`p-2 rounded-lg ${
+                          theme === 'dark' ? 'text-yellow-400 bg-yellow-900/30' : 'text-yellow-600 bg-yellow-100'
+                        }`}>
+                          <Code className="w-4 h-4" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-2">
@@ -436,12 +678,12 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
                               <div className={`font-medium text-sm mb-1 ${
                                 theme === 'dark' ? 'text-white' : 'text-gray-900'
                               }`}>
-                                {source.title}
+                                {skill.title}
                               </div>
                               <div className={`text-xs mb-2 ${
                                 theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
                               }`}>
-                                {source.description}
+                                {skill.description}
                               </div>
                             </div>
                             <ExternalLink className={`w-4 h-4 flex-shrink-0 ${
@@ -451,13 +693,17 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
                           <div className={`flex items-center gap-2 text-xs ${
                             theme === 'dark' ? 'text-gray-600' : 'text-gray-500'
                           }`}>
+                            <span className={`px-2 py-0.5 rounded ${getComplexityColor(skill.complexity)}`}>
+                              {skill.complexity}
+                            </span>
+                            <span>•</span>
                             <span className={`px-2 py-0.5 rounded ${
                               theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
                             }`}>
-                              {source.type.toUpperCase()}
+                              v{skill.version}
                             </span>
                             <span>•</span>
-                            <span>Added {source.addedDate.toLocaleDateString()}</span>
+                            <span>Added {skill.addedDate.toLocaleDateString()}</span>
                           </div>
                         </div>
                       </div>
@@ -468,27 +714,27 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
                 <div className={`text-center py-12 ${
                   theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
                 }`}>
-                  <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">No sources added yet</p>
-                  <p className="text-xs mt-1">Click "Add Source" to get started</p>
+                  <FileCode className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No skills added yet</p>
+                  <p className="text-xs mt-1">Click "Add Skill" to get started</p>
                 </div>
               )
             ) : (
               <div className={`text-center py-12 ${
                 theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
               }`}>
-                Select a process to view knowledge sources
+                Select a process to view skills
               </div>
             )}
           </div>
         </div>
 
-        {/* Add Source Modal */}
-        {showAddSourceModal && (
-          <AddSourceModal
+        {/* Add Skill Modal */}
+        {showAddSkillModal && (
+          <AddSkillModal
             theme={theme}
-            onClose={() => setShowAddSourceModal(false)}
-            onAdd={handleAddSource}
+            onClose={() => setShowAddSkillModal(false)}
+            onAdd={handleAddSkill}
           />
         )}
 
@@ -501,12 +747,17 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
           />
         )}
 
-        {/* View Source Modal */}
-        {viewingSource && (
-          <ViewTextSourceModal
+        {/* View/Edit Skill Modal */}
+        {viewingSkill && (
+          <SkillsEditor
             theme={theme}
-            source={viewingSource}
-            onClose={() => setViewingSource(null)}
+            onClose={() => setViewingSkill(null)}
+            skillTitle={viewingSkill.title}
+            skillContent={viewingSkill.content}
+            onSave={(newContent: string) => {
+              handleSaveSkill(viewingSkill.id, newContent);
+              setViewingSkill(null);
+            }}
           />
         )}
       </div>
@@ -514,25 +765,27 @@ export function KnowledgeBase({ theme }: KnowledgeBaseProps) {
   );
 }
 
-// Add Source Modal Component
-function AddSourceModal({ 
+// Add Skill Modal Component
+function AddSkillModal({ 
   theme, 
   onClose, 
   onAdd 
 }: { 
   theme: 'dark' | 'light'; 
   onClose: () => void; 
-  onAdd: (source: Omit<KnowledgeSource, 'id' | 'addedDate'>) => void;
+  onAdd: (skill: Omit<Skill, 'id' | 'addedDate'>) => void;
 }) {
-  const [sourceType, setSourceType] = useState<'link' | 'document' | 'text' | 'graph'>('link');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [description, setDescription] = useState('');
+  const [version, setVersion] = useState('1.0.0');
+  const [complexity, setComplexity] = useState<'Beginner' | 'Intermediate' | 'Advanced'>('Intermediate');
+  const [category, setCategory] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (title && content) {
-      onAdd({ type: sourceType, title, content, description });
+    if (title && content && category) {
+      onAdd({ title, content, description, version, complexity, category });
     }
   };
 
@@ -547,68 +800,87 @@ function AddSourceModal({
           <h3 className={`text-xl font-semibold ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}>
-            Add Knowledge Source
+            Add Skill
           </h3>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Source Type Selection */}
-          <div>
-            <label className={`block text-sm font-medium mb-2 ${
-              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              Source Type
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { type: 'link' as const, icon: LinkIcon, label: 'Documentation Link' },
-                { type: 'document' as const, icon: Upload, label: 'Upload Document' },
-                { type: 'text' as const, icon: MessageSquare, label: 'Text Instructions' },
-                { type: 'graph' as const, icon: Network, label: 'Knowledge Graph' }
-              ].map(({ type, icon: Icon, label }) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setSourceType(type)}
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    sourceType === type
-                      ? theme === 'dark'
-                        ? 'border-cyan-600 bg-cyan-900/30'
-                        : 'border-cyan-500 bg-cyan-50'
-                      : theme === 'dark'
-                      ? 'border-gray-800 hover:border-gray-700'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className={`w-6 h-6 mx-auto mb-1 ${
-                    sourceType === type
-                      ? theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'
-                      : theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
-                  }`} />
-                  <div className={`text-xs ${
-                    sourceType === type
-                      ? theme === 'dark' ? 'text-cyan-300' : 'text-cyan-700'
-                      : theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    {label}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Title */}
           <div>
             <label className={`block text-sm font-medium mb-2 ${
               theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
             }`}>
-              Title *
+              Skill Title *
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter a descriptive title"
+              placeholder="Enter skill title"
+              required
+              className={`w-full px-3 py-2 rounded-lg border ${
+                theme === 'dark'
+                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+              } focus:outline-none focus:ring-2 focus:ring-cyan-500`}
+            />
+          </div>
+
+          {/* Complexity and Version */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Complexity *
+              </label>
+              <select
+                value={complexity}
+                onChange={(e) => setComplexity(e.target.value as 'Beginner' | 'Intermediate' | 'Advanced')}
+                className={`w-full px-3 py-2 rounded-lg border ${
+                  theme === 'dark'
+                    ? 'bg-gray-800 border-gray-700 text-white'
+                    : 'bg-white border-gray-300 text-gray-900'
+                } focus:outline-none focus:ring-2 focus:ring-cyan-500`}
+              >
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+              </select>
+            </div>
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Version *
+              </label>
+              <input
+                type="text"
+                value={version}
+                onChange={(e) => setVersion(e.target.value)}
+                placeholder="1.0.0"
+                required
+                className={`w-full px-3 py-2 rounded-lg border ${
+                  theme === 'dark'
+                    ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                } focus:outline-none focus:ring-2 focus:ring-cyan-500`}
+              />
+            </div>
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className={`block text-sm font-medium mb-2 ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              Category *
+            </label>
+            <input
+              type="text"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="e.g., Corporate Actions"
               required
               className={`w-full px-3 py-2 rounded-lg border ${
                 theme === 'dark'
@@ -623,42 +895,20 @@ function AddSourceModal({
             <label className={`block text-sm font-medium mb-2 ${
               theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
             }`}>
-              {sourceType === 'link' ? 'URL *' : 
-               sourceType === 'document' ? 'File Name *' :
-               sourceType === 'text' ? 'Instructions *' :
-               'API Endpoint *'}
+              Skill Content (Markdown) *
             </label>
-            {sourceType === 'text' ? (
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Enter detailed instructions or knowledge content"
-                required
-                rows={6}
-                className={`w-full px-3 py-2 rounded-lg border ${
-                  theme === 'dark'
-                    ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500'
-                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
-                } focus:outline-none focus:ring-2 focus:ring-cyan-500`}
-              />
-            ) : (
-              <input
-                type="text"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder={
-                  sourceType === 'link' ? 'https://...' :
-                  sourceType === 'document' ? 'document.pdf' :
-                  'https://api.graph.com/endpoint'
-                }
-                required
-                className={`w-full px-3 py-2 rounded-lg border ${
-                  theme === 'dark'
-                    ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500'
-                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
-                } focus:outline-none focus:ring-2 focus:ring-cyan-500`}
-              />
-            )}
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Enter skill documentation in markdown format following agentskills.io specification"
+              required
+              rows={10}
+              className={`w-full px-3 py-2 rounded-lg border font-mono text-sm ${
+                theme === 'dark'
+                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+              } focus:outline-none focus:ring-2 focus:ring-cyan-500`}
+            />
           </div>
 
           {/* Description */}
@@ -671,8 +921,8 @@ function AddSourceModal({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional: Add a description for this source"
-              rows={3}
+              placeholder="Brief description of the skill"
+              rows={2}
               className={`w-full px-3 py-2 rounded-lg border ${
                 theme === 'dark'
                   ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500'
@@ -702,7 +952,7 @@ function AddSourceModal({
                   : 'bg-cyan-500 hover:bg-cyan-600 text-white'
               }`}
             >
-              Add Source
+              Add Skill
             </button>
           </div>
         </form>
@@ -814,42 +1064,4 @@ function AddProcessModal({
       </div>
     </div>
   );
-}
-
-// View Source Modal Component
-function ViewTextSourceModal({ 
-  theme, 
-  source, 
-  onClose 
-}: { 
-  theme: 'dark' | 'light'; 
-  source: KnowledgeSource; 
-  onClose: () => void; 
-}) {
-  // If it's a graph, show the Knowledge Graph Viewer
-  if (source.type === 'graph') {
-    return (
-      <KnowledgeGraphViewer
-        theme={theme}
-        onClose={onClose}
-        graphTitle={source.title}
-        graphEndpoint={source.content}
-      />
-    );
-  }
-  
-  // If it's text, show the Text Instructions Viewer
-  if (source.type === 'text') {
-    return (
-      <TextInstructionsViewer
-        theme={theme}
-        onClose={onClose}
-        title={source.title}
-        content={source.content}
-        description={source.description}
-      />
-    );
-  }
-  
-  return null;
 }

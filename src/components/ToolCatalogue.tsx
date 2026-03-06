@@ -320,7 +320,7 @@ export function ToolCatalogue({ theme }: ToolsCatalogueProps) {
                 <h1 className={`text-3xl font-bold ${
                   theme === 'dark' ? 'text-white' : 'text-gray-900'
                 }`}>
-                  Tools Catalogue
+                  Tools
                 </h1>
                 <p className={`text-sm mt-1 ${
                   theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
